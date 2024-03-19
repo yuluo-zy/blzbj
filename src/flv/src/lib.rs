@@ -1,3 +1,13 @@
+mod tag;
+mod h264_nalu;
+mod reader;
+mod writer;
+mod group_rule;
+mod group_reader;
+mod pipline;
+mod amf;
+mod error;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
