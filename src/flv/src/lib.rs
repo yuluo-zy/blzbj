@@ -8,6 +8,7 @@ mod pipline;
 mod amf;
 mod error;
 mod borrow_bag;
+mod group;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

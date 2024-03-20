@@ -6,7 +6,7 @@ use anyhow::Result;
 use num_enum::TryFromPrimitive;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use crate::amf::script_values::{ScriptDataBoolean, ScriptDataDate, ScriptDataEcmaArray, ScriptDataLongString, ScriptDataNull, ScriptDataNumber, ScriptDataObject, ScriptDataReference, ScriptDataStrictArray, ScriptDataString, ScriptDataUndefined};
-
+pub use script_values::ScriptTagBody;
 // 定义 ScriptDataType 枚举，匹配 C# 中的 ScriptDataType。
 #[derive(Serialize, Deserialize, Debug, PartialEq, TryFromPrimitive)]
 #[serde(rename_all = "camelCase")]

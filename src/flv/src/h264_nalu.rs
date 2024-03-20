@@ -1,5 +1,7 @@
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+
 ///`H264Nalu` 指的是网络抽象层单元（Network Abstraction Layer Unit）在 H.264/AVC 视频编解码标准中的应用。在 H.264 视频流中，NALU 是视频数据的基本单元。每个 NALU 包含了编码视频的一部分数据，它们一起构成了视频的一个帧或一组帧。
 //
 // H.264 视频编码使用了一种分层结构，其中最底层是 NALU。NALU 的设计使得视频流可以适应不同的网络层，包括 TCP/IP 和无线网络。这个层次结构的设计意味着相同的视频数据可以在不同的网络条件和协议中传输，而不需要重新编码。
@@ -12,11 +14,12 @@ use anyhow::Result;
 // - NALU 的类型（比如是否为关键帧）
 // - NALU 的具体编码数据
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct H264Nalu {
-    start_position: i32,
-    full_size: u32,
-    type_of: H264NaluType,
-    nalu_hash: Option<String>
+    pub(crate) start_position: i32,
+    pub(crate) full_size: u32,
+    pub(crate) type_of: H264NaluType,
+    pub(crate) nalu_hash: Option<String>
 }
 
 impl H264Nalu {
@@ -63,7 +66,7 @@ impl H264Nalu {
         }
     }
 }
-
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum H264NaluType {
     Unspecified0 = 0,
