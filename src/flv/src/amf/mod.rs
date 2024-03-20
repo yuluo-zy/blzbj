@@ -2,14 +2,15 @@ mod script_values;
 
 use async_trait::async_trait;
 use serde::{Serialize, Deserialize};
-use serde_json::Value as JsonValue;
 use anyhow::Result;
+use num_enum::TryFromPrimitive;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use crate::amf::script_values::ScriptDataBoolean;
+use crate::amf::script_values::{ScriptDataBoolean, ScriptDataDate, ScriptDataEcmaArray, ScriptDataLongString, ScriptDataNull, ScriptDataNumber, ScriptDataObject, ScriptDataReference, ScriptDataStrictArray, ScriptDataString, ScriptDataUndefined};
 
 // 定义 ScriptDataType 枚举，匹配 C# 中的 ScriptDataType。
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, TryFromPrimitive)]
 #[serde(rename_all = "camelCase")]
+#[repr(u8)]
 pub enum ScriptDataType {
     Number = 0,
     Boolean = 1,
@@ -30,17 +31,17 @@ pub enum ScriptDataType {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type", content = "value")]
 pub enum ScriptDataValue {
-    Number(f64),
+    Number(ScriptDataNumber),
     Boolean(ScriptDataBoolean),
-    String(String),
-    Object(JsonValue),
-    Null,
-    Undefined,
-    Reference(u16),
-    EcmaArray(Vec<(String, Box<ScriptDataValue>)>),
-    StrictArray(Vec<ScriptDataValue>),
-    Date(f64),
-    LongString(String),
+    String(ScriptDataString),
+    Object(ScriptDataObject),
+    Null(ScriptDataNull),
+    Undefined(ScriptDataUndefined),
+    Reference(ScriptDataReference),
+    EcmaArray(ScriptDataEcmaArray),
+    StrictArray(ScriptDataStrictArray),
+    Date(ScriptDataDate),
+    LongString(ScriptDataLongString),
 }
 
 #[async_trait]

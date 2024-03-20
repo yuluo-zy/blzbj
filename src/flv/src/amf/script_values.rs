@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use crate::amf::{ScriptDataType, ScriptDataValue, ScriptDataValueTrait};
 use anyhow::Result;
-use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
+use bytes::BytesMut;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use chrono::{DateTime, TimeZone, Utc, FixedOffset, Offset};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct ScriptDataBoolean {
     pub value: bool,
 }
@@ -211,7 +212,7 @@ impl ScriptDataValueTrait for ScriptDataNumber {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct ScriptDataObject {
     value: HashMap<String, ScriptDataValue>,
 }
@@ -296,7 +297,7 @@ impl From<ScriptDataReference> for u16 {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct ScriptDataStrictArray {
     pub value: Vec<ScriptDataValue>,
 }
@@ -304,6 +305,9 @@ pub struct ScriptDataStrictArray {
 impl ScriptDataStrictArray {
     pub fn new() -> Self {
         ScriptDataStrictArray { value: Vec::new() }
+    }
+    pub fn push(&mut self, value: ScriptDataValue) {
+        self.value.push(value);
     }
 }
 
@@ -324,7 +328,7 @@ impl ScriptDataValueTrait for ScriptDataStrictArray {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct ScriptDataString {
     pub value: String,
 }
@@ -353,14 +357,8 @@ impl ScriptDataValueTrait for ScriptDataString {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct ScriptDataUndefined;
-
-impl ScriptDataUndefined {
-    pub fn new() -> Self {
-        ScriptDataUndefined
-    }
-}
 
 impl ScriptDataValueTrait for ScriptDataUndefined {
     fn data_type(&self) -> ScriptDataType {
@@ -373,6 +371,7 @@ impl ScriptDataValueTrait for ScriptDataUndefined {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct ScriptTagBody {
     values: Vec<ScriptDataValue>,
 }
@@ -390,16 +389,90 @@ impl ScriptTagBody {
         serde_json::to_string(&self.values)
     }
 
-    pub fn parse<R: Read>(reader: &mut R) -> Result<Self> {
-        // Skipping implementation details for parsing binary data
-        // Would be similar to the C# `Parse` method, reading types and constructing values
-        todo!()
+    pub async fn parse<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Self> {
+        let mut list: Vec<ScriptDataValue> = Vec::new();
+
+        while let Ok(item) = Self::parse_value(reader).await {
+            list.push(item);
+        }
+        Ok(ScriptTagBody { values: list })
     }
 
-    pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        let mut bytes = Vec::new();
-        self.write_to(&mut bytes)?;
-        Ok(bytes)
+    pub async fn parse_value<R: AsyncRead + Unpin>(reader: &mut R) -> Result<ScriptDataValue> {
+        let type_byte = reader.read_u8().await?;
+        let type_byte = num_enum::FromPrimitive::from_primitive(type_byte);
+        match type_byte {
+            ScriptDataType::Number => {
+                let number = reader.read_f64().await?;
+                return Ok(ScriptDataValue::Number(ScriptDataNumber::new(number)));
+            }
+            ScriptDataType::Boolean => {
+                let boolean = reader.read_u8().await? != 0;
+                return Ok(ScriptDataValue::Boolean(ScriptDataBoolean::new(boolean)));
+            }
+            ScriptDataType::String => {
+                let str_ = read_script_data_string(reader, false).await?;
+                return Ok(ScriptDataValue::String(ScriptDataString::new(str_)));
+            }
+            // ScriptDataType::Object => {}
+            // todo: 复杂嵌套类型实现
+            ScriptDataType::MovieClip => {
+                return Err(anyhow::anyhow!("MovieClip is not supported"));
+            }
+            ScriptDataType::Null => {
+                return Ok(ScriptDataValue::Undefined(ScriptDataUndefined));
+            }
+            ScriptDataType::Undefined => {
+                return Ok(ScriptDataValue::Undefined(ScriptDataUndefined));
+            }
+            ScriptDataType::Reference => {
+                let ref_ = reader.read_u16().await?;
+                return Ok(ScriptDataValue::Reference(ScriptDataReference::new(ref_)));
+            }
+            ScriptDataType::ObjectEndMarker => {
+                return Err(anyhow::anyhow!("Read ObjectEndMarker"));
+            }
+            ScriptDataType::StrictArray => {
+                let length = reader.read_u32().await?;
+                let mut array = ScriptDataStrictArray::new();
+                for _i in length {
+                    array.push(Self::parse_value(reader).await?);
+                }
+                return Ok(ScriptDataValue::StrictArray(array))
+            }
+            ScriptDataType::Date => {
+                let date_time = reader.read_f64().await?;
+                let offset_ = reader.read_i16().await?;
+                let seconds = (date_time as i64) / 1000;
+                // 然后取得毫秒中的剩余部分
+                let nanoseconds = ((date_time % 1000.0) * 1_000_000.0) as u32;
+
+                // 使用 chrono 创建 DateTime<Utc>
+                let date_time = Utc.timestamp_opt(seconds, nanoseconds)
+                    .single()
+                    .ok_or_else(|| Err(anyhow::anyhow!("Invalid timestamp for DateTime<Utc>")))?;
+
+                return Ok(ScriptDataValue::Date(ScriptDataDate::new(date_time)))
+            }
+            ScriptDataType::LongString => {
+                let str_ = read_long_string(reader).await?;
+                return Ok(ScriptDataValue::LongString(ScriptDataLongString::new(str_)));
+            }
+            _ => return Err(anyhow::anyhow!("Unknown ScriptDataValueType")),
+        }
+    }
+
+    // pub fn to_bytes<W>(self, writer: &mut W) -> Result<Vec<u8>>  where W: AsyncWrite + Unpin + Send {
+    // let mut buf = BytesMut::new();
+    //     self.write_to(&mut buf)?;
+    //     Ok(bytes)
+    // }
+
+    async fn write_to<W>(self, writer: &mut W) -> Result<()> where W: AsyncWrite + Unpin + Send {
+        for value in self.values {
+            value.write_to(writer).await?;
+        }
+        Ok(())
     }
 
     pub fn get_metadata_value(&self) -> Option<&ScriptDataEcmaArray> {
@@ -417,4 +490,34 @@ impl ScriptTagBody {
             None
         }
     }
+}
+
+pub async fn read_script_data_string<R: AsyncRead + Unpin>(reader: &mut R, expect_object_end_marker: bool) -> Result<String> {
+    let length = reader.read_u16().await?;
+    if length == 0 {
+        if expect_object_end_marker && reader.read_u8().await? != 9 {
+            return Err(anyhow::anyhow!("ObjectEndMarker not matched."));
+        }
+        return Ok(String::new());
+    }
+    let mut buf = BytesMut::with_capacity(length as usize);
+    reader.read_exact(&mut buf).await?;
+    let string = String::from_utf8(buf.freeze().to_vec())
+        .map_err(|e| Err(anyhow::anyhow!("string to utf-8 is error")))?
+        .replace("\0", "");
+    return Ok(string);
+}
+
+pub async fn read_long_string<R: AsyncRead + Unpin>(reader: &mut R) -> Result<String> {
+    let length = reader.read_u32().await?;
+    if length > u32::MAX {
+        return Err(anyhow::anyhow!("LongString larger than {} is not supported.", u32::MAX));
+    }
+
+    let mut buf = BytesMut::with_capacity(length as usize);
+    reader.read_exact(&mut buf).await?;
+    let string = String::from_utf8(buf.freeze().to_vec())
+        .map_err(|e| Err(anyhow::anyhow!("string to utf-8 is error")))?
+        .replace("\0", "");
+    return Ok(string);
 }

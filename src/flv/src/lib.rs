@@ -7,6 +7,7 @@ mod group_reader;
 mod pipline;
 mod amf;
 mod error;
+mod borrow_bag;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
