@@ -1,103 +1,85 @@
-use std::sync::Arc;
 use anyhow::Result;
 use blake3::IncrementCounter::No;
 use bytes::{Buf, BufMut, BytesMut};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use tokio::sync::Semaphore;
-use crate::tag::Tag;
+use nom::{IResult, Needed};
+use tokio::io::{AsyncRead, AsyncReadExt};
+use crate::parser::{complete_tag, header};
 
-struct FlvTagPipeReader {
-    reader: TcpStream,
-    semaphore: Arc<Semaphore>,
-    tag_index: i32,
-    skip_data: bool,
-    leave_open: bool,
-    peek: bool,
-    file_header: bool,
-    peek_tag: Option<Tag>,
+use crate::tag::{Header, Tag, TagType};
+
+pub struct FlvTagPipeReader{
+    buffer: BytesMut,
+    file_header: bool
 }
 
 impl FlvTagPipeReader {
-    pub async fn new(reader: TcpStream) -> Result<Self> {
-        Ok(FlvTagPipeReader {
-            reader,
-            semaphore: Arc::new(Semaphore::new(1)),
-            tag_index: 0,
-            skip_data: false,
-            leave_open: false,
-            peek: false,
-            file_header: false,
-            peek_tag: None,
-        })
+    pub async fn new() -> Result<Self> {
+        Ok(FlvTagPipeReader{
+            buffer : BytesMut::with_capacity(4096),
+            file_header: false
+        } )
     }
 
-    pub async fn read_next_tag(&mut self) -> Result<Option<Tag>> {
-        // 处理 FLV 标签的异步读取逻辑...
-        let mut buffer = BytesMut::new();
+    pub async fn read_next_tag<R: AsyncRead + Unpin>(&mut self,  reader:&mut R) -> Result<Option<Tag>> {
 
         loop {
-            let num = self.reader.read_buf(&mut buffer).await?;
-
-            if num == 0 && buffer.is_empty() {
-                return Ok(None);
+            // 为新数据预留空间
+            if self.buffer.remaining_mut() < 512 {
+                self.buffer.reserve(4096);
             }
 
-            // 尝试分析文件头
+            let n = match reader.read_buf(&mut self.buffer).await {
+                Ok(0) => {
+                    // 读取到 0 字节表示连接关闭
+                    return Ok(None);
+                }
+                Ok(n) => n,
+                Err(e) => {
+                    return Err(anyhow::anyhow!("failed to read from socket; err = {:?}", e));
+                }
+            };
 
-            if !self.file_header {
-                if Self::parse_file_header(&mut buffer).await? {
-                    self.file_header = true;
-                } else {
-                    // 如果没有足够的数据来解析文件头，继续读取。
-                    continue;
+            // 只要 buffer 有内容就尝试解析
+            loop {
+                match self.parse_data() {
+                    Ok((remaining, parsed_data)) => {
+                        // 从 buffer 中移除已经解析的数据
+                        let consumed = self.buffer.len() - remaining.len();
+                        self.buffer.advance(consumed);
+                        return Ok(Some(parsed_data));
+                    }
+                    Err(nom::Err::Incomplete(_)) => {
+                        break;
+                    }
+                    Err(_) => {
+                        // 解析错误，可以选择如何处理
+                        // ...
+                        break;
+                    }
                 }
             }
         }
-
-
-        Ok(None) // 返回解析到的 Tag 或 None
     }
 
-    pub async fn parse_file_header(buffer: &mut BytesMut) -> Result<bool> {
-        if buffer.remaining() < 9 {
-            return Ok(false);
+    pub fn parse_data(&mut self,) ->  IResult<&[u8], Tag>{
+        if !self.file_header {
+            if self.buffer.remaining() <9 {
+                return Err(nom::Err::Incomplete(Needed::Unknown))
+            }
+            match header(&self.buffer[..9]) {
+                Ok(_) => {
+                    self.file_header = true;
+                    self.buffer.advance(9);
+                }
+                Err(_) => {
+                    return Err(nom::Err::Incomplete(Needed::Unknown))
+                }
+            }
         }
-        let mut header = buffer.split_to(9);
-        let data = header.as_ref();
-
-        if data[0] != b'F' || data[1] != b'L' || data[2] != b'V' || data[3] != 1 {
-            return Err(anyhow::anyhow!("Data is not FLV."));
+        if self.buffer.remaining() < 4  {
+            return Err(nom::Err::Incomplete(Needed::Unknown))
         }
-
-        if data[5] != 0 || data[6] != 0 || data[7] != 0 || data[8] != 9 {
-            return Err(anyhow::anyhow!("Not Supported FLV format."));
-        }
-        Ok(true)
-    }
-
-    pub async fn parse_tag_data(buffer: &mut BytesMut) -> Result<bool> {
-        if buffer.remaining() < 11 + 4 {
-            return Ok(false);
-        };
-        let tag_header_slice = buffer.slice(4..4 + 11);
-
-        Ok(false)
-    }
-
-    pub async fn peek_tag(&mut self) -> Result<Option<Tag>> {
-        let _permit = self.semaphore.acquire().await.unwrap();
-        // 调用 read_next_tag，但不实际消耗数据...
-        // ...
-
-        Ok(None) // 返回解析到的 Tag 或 None
-    }
-
-    pub async fn read_tag(&mut self) -> Result<Option<Tag>> {
-        let _permit = self.semaphore.acquire().await.unwrap();
-        // 调用 read_next_tag 并消耗数据...
-        // ...
-
-        Ok(None) // 返回解析到的 Tag 或 None
+        
+        return  complete_tag(&self.buffer[4..])
     }
 }

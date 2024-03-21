@@ -9,6 +9,7 @@ mod amf;
 mod error;
 mod borrow_bag;
 mod group;
+mod parser;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

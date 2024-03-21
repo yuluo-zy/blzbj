@@ -15,5 +15,7 @@ pub enum TagReaderError {
     Cancelled,
 
     #[error("The amf parse is error: {0}")]
-    AmfParseError(String)
+    AmfParseError(String),
+    #[error("unknown tag Type : {0}")]
+    UnknownTagType(u8),
 }
