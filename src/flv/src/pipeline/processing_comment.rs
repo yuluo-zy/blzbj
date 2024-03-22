@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use crate::pipline::CommentType;
+use crate::pipeline::CommentType;
 
 pub struct ProcessingComment {
     pub comment_type: CommentType,

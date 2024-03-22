@@ -1,5 +1,5 @@
-use crate::pipline::processing_comment::ProcessingComment;
-use crate::pipline::CommentType;
+use crate::pipeline::processing_comment::ProcessingComment;
+use crate::pipeline::CommentType;
 
 pub struct HandleDelayedAudioHeaderRule {
     comments: Vec<ProcessingComment>

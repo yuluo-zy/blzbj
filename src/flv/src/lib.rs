@@ -4,12 +4,12 @@ mod reader;
 mod writer;
 mod group_rule;
 mod group_reader;
-mod pipline;
-mod amf;
+mod pipeline;
 mod error;
 mod borrow_bag;
 mod group;
 mod parser;
+mod amf;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

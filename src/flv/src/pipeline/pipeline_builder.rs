@@ -3,9 +3,9 @@ use std::panic::RefUnwindSafe;
 use std::pin::Pin;
 use std::sync::Arc;
 use crate::borrow_bag::{BorrowBag, Handle, Lookup};
-use crate::pipline::processing_context::State;
+use crate::pipeline::processing_context::State;
 use anyhow::Result;
-use futures_util::{future, FutureExt};
+// use futures_util::{future, FutureExt};
 
 pub type PipelineSet<P> = Arc<BorrowBag<P>>;
 
@@ -171,28 +171,28 @@ pub fn new_pipeline() -> PipelineBuilder<()> {
 
 
 
-impl<P, T, N, U> PipelineHandleChain<P> for (Handle<Pipeline<T>, N>, U)
-    where
-        T: NewMiddlewareChain,
-        T::Instance: Send + 'static,
-        U: PipelineHandleChain<P>,
-        P: Lookup<Pipeline<T>, N>,
-        N: RefUnwindSafe,
-{
-    fn call<F>(&self, pipelines: &PipelineSet<P>, state: State, f: F) -> Pin<Box<HandlerFuture>>
-        where
-            F: FnOnce(State) -> Pin<Box<HandlerFuture>> + Send + 'static,
-    {
-        let (handle, ref chain) = *self;
-        match pipelines.borrow(handle).construct() {
-            Ok(p) => chain.call(pipelines, state, move |state| p.call(state, f)),
-            Err(e) => {
-                // trace!("[{}] error borrowing pipeline", request_id(&state));
-                future::err((state, e.into())).boxed()
-            }
-        }
-    }
-}
+// impl<P, T, N, U> PipelineHandleChain<P> for (Handle<Pipeline<T>, N>, U)
+//     where
+//         T: NewMiddlewareChain,
+//         T::Instance: Send + 'static,
+//         U: PipelineHandleChain<P>,
+//         P: Lookup<Pipeline<T>, N>,
+//         N: RefUnwindSafe,
+// {
+//     fn call<F>(&self, pipelines: &PipelineSet<P>, state: State, f: F) -> Pin<Box<HandlerFuture>>
+//         where
+//             F: FnOnce(State) -> Pin<Box<HandlerFuture>> + Send + 'static,
+//     {
+//         let (handle, ref chain) = *self;
+//         match pipelines.borrow(handle).construct() {
+//             Ok(p) => chain.call(pipelines, state, move |state| p.call(state, f)),
+//             Err(e) => {
+//                 // trace!("[{}] error borrowing pipeline", request_id(&state));
+//                 future::err((state, e.into())).boxed()
+//             }
+//         }
+//     }
+// }
 
 /// The marker for the end of a `PipelineHandleChain`.
 impl<P> PipelineHandleChain<P> for () {
