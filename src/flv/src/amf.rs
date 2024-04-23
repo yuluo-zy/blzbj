@@ -64,27 +64,13 @@ pub enum Value {
 }
 
 impl Value {
-    /// Reads an AMF0 encoded `Value` from `reader`.
-    ///
-    /// Note that reference objects are copied in the decoding phase
-    /// for the sake of simplicity of the resulting value representation.
-    /// And circular reference are unsupported (i.e., those are treated as errors).
+
     pub async fn read_from<R>(reader: R) -> Result<Self>
         where
-            R: AsyncRead + AsyncReadExt + Unpin + Send,
+            R: AsyncRead + Unpin + Send,
     {
         Decoder::new(reader).decode().await
     }
-
-    /// Writes the AMF0 encoded bytes of this value to `writer`.
-    // pub async fn write_to<W>(&self, writer: W) -> Result<()>
-    //     where
-    //         W: AsyncWrite + AsyncWriteExt + Unpin + Send,
-    // {
-    //     Encoder::new(writer).encode(self)
-    // }
-
-    /// Tries to convert the value as a `str` reference.
     pub async fn try_as_str(&self) -> Option<&str> {
         match *self {
             Value::String(ref x) => Some(x.as_ref()),
@@ -187,11 +173,22 @@ impl<R> Decoder<R> {
     }
 }
 
+#[derive(Debug)]
+pub struct Encoder<W> {
+    inner: W,
+}
+impl<W> Encoder<W> {
+    /// Unwraps this `Encoder`, returning the underlying writer.
+    pub fn into_inner(self) -> W {
+        self.inner
+    }
+}
+
+
 impl<R> Decoder<R>
     where
         R: AsyncRead + AsyncReadExt + Send + Unpin,
 {
-    /// Makes a new instance.
     pub fn new(inner: R) -> Self {
         Decoder {
             inner,
@@ -199,17 +196,10 @@ impl<R> Decoder<R>
         }
     }
 
-    /// Decodes a AMF0 value.
     pub async fn decode(&mut self) -> Result<Value> {
         self.decode_value().await
     }
 
-    /// Clear the reference table of this decoder.
-    ///
-    /// > Note that object reference indices are local to each message body.
-    /// > Serializers and deserializers must reset reference indices to 0 each time a new message is processed.
-    /// >
-    /// > [AMF 0 Specification: 4.1.3 AMF Message](http://download.macromedia.com/pub/labs/amf/amf0_spec_121207.pdf)
     pub fn clear_reference_table(&mut self) {
         self.complexes.clear();
     }
@@ -357,5 +347,131 @@ impl<R> Decoder<R>
             }
         }
         Ok(entries)
+    }
+}
+
+impl<W> Encoder<W>
+    where
+        W: AsyncWrite + Send +Unpin,
+{
+    pub fn new(inner: W) -> Self {
+        Encoder { inner }
+    }
+    /// Encodes a AMF0 value.
+    #[async_recursion]
+    pub async fn encode(&mut self, value: &Value) -> Result<()> {
+        match *value {
+            Value::Number(x) => self.encode_number(x).await,
+            Value::Boolean(x) => self.encode_boolean(x).await,
+            Value::String(ref x) => self.encode_string(x).await,
+            Value::Object {
+                ref class_name,
+                ref entries,
+            } => self.encode_object(class_name, entries).await,
+            Value::Null => self.encode_null().await,
+            Value::Undefined => self.encode_undefined().await,
+            Value::EcmaArray { ref entries } => self.encode_ecma_array(entries).await,
+            Value::Array { ref entries } => self.encode_strict_array(entries).await,
+            Value::Date {
+                unix_time,
+                time_zone,
+            } => self.encode_date(unix_time, time_zone).await,
+            Value::XmlDocument(ref x) => self.encode_xml_document(x).await,
+        }
+    }
+
+    async fn encode_number(&mut self, n: f64) -> Result<()> {
+        self.inner.write_u8(marker::NUMBER).await?;
+        self.inner.write_f64(n).await?;
+        Ok(())
+    }
+    async fn encode_boolean(&mut self, b: bool) -> Result<()> {
+        self.inner.write_u8(marker::BOOLEAN).await?;
+        self.inner.write_u8(b as u8).await?;
+        Ok(())
+    }
+    async fn encode_string(&mut self, s: &str) -> Result<()> {
+        if s.len() <= 0xFFFF {
+            self.inner.write_u8(marker::STRING).await?;
+            self.write_str_u16(s).await?;
+        } else {
+            self.inner.write_u8(marker::LONG_STRING).await?;
+            self.write_str_u32(s).await?;
+        }
+        Ok(())
+    }
+   async fn encode_object(
+        &mut self,
+        class_name: &Option<String>,
+        entries: &IndexMap<String, Value>,
+    ) -> Result<()> {
+        assert!(entries.len() <= 0xFFFF_FFFF);
+        if let Some(class_name) = class_name.as_ref() {
+            self.inner.write_u8(marker::TYPED_OBJECT).await?;
+            self.write_str_u16(class_name).await?;
+        } else {
+            self.inner.write_u8(marker::OBJECT).await?;
+        }
+        self.encode_pairs(entries).await?;
+        Ok(())
+    }
+    async fn encode_null(&mut self) -> Result<()> {
+        self.inner.write_u8(marker::NULL).await?;
+        Ok(())
+    }
+   async fn encode_undefined(&mut self) -> Result<()> {
+        self.inner.write_u8(marker::UNDEFINED).await?;
+        Ok(())
+    }
+    async fn encode_ecma_array(&mut self, entries: &IndexMap<String, Value>) -> Result<()> {
+        assert!(entries.len() <= 0xFFFF_FFFF);
+        self.inner.write_u8(marker::ECMA_ARRAY).await?;
+        self.inner.write_u32(entries.len() as u32).await?;
+        self.encode_pairs(entries).await?;
+        Ok(())
+    }
+    async fn encode_strict_array(&mut self, entries: &[Value]) -> Result<()> {
+        assert!(entries.len() <= 0xFFFF_FFFF);
+        self.inner.write_u8(marker::STRICT_ARRAY).await?;
+        self.inner.write_u32(entries.len() as u32).await?;
+        for e in entries {
+            self.encode(e).await?;
+        }
+        Ok(())
+    }
+   async fn encode_date(&mut self, unix_time: time::Duration, time_zone: i16) -> Result<()> {
+        let millis = unix_time.as_secs() * 1000 + (unix_time.subsec_nanos() as u64) / 1_000_000;
+
+        self.inner.write_u8(marker::DATE).await?;
+        self.inner.write_f64(millis as f64).await?;
+        self.inner.write_i16(time_zone).await?;
+        Ok(())
+    }
+   async fn encode_xml_document(&mut self, xml: &str) -> Result<()> {
+        self.inner.write_u8(marker::XML_DOCUMENT).await?;
+        self.write_str_u32(xml).await?;
+        Ok(())
+    }
+
+   async fn write_str_u32(&mut self, s: &str) -> Result<()> {
+        assert!(s.len() <= 0xFFFF_FFFF);
+        self.inner.write_u32(s.len() as u32).await?;
+        self.inner.write_all(s.as_bytes()).await?;
+        Ok(())
+    }
+    async fn write_str_u16(&mut self, s: &str) -> Result<()> {
+        assert!(s.len() <= 0xFFFF);
+        self.inner.write_u16(s.len() as u16).await?;
+        self.inner.write_all(s.as_bytes()).await?;
+        Ok(())
+    }
+    async fn encode_pairs(&mut self, pairs: &IndexMap<String, Value>) -> Result<()> {
+        for p in pairs {
+            self.write_str_u16(&p.0).await?;
+            self.encode(&p.1).await?;
+        }
+        self.inner.write_u16(0).await?;
+        self.inner.write_u8(marker::OBJECT_END_MARKER).await?;
+        Ok(())
     }
 }

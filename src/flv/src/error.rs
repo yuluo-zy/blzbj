@@ -1,6 +1,5 @@
 use thiserror::Error;
 use {
-    // bytesio::bytes_errors::{BytesReadError, BytesWriteError},
     std::{
         fmt, {io, string},
     },
@@ -56,4 +55,18 @@ pub enum Amf0ReadError {
     Io(#[from] std::io::Error),
     #[error("IO error")]
     StringParser(#[from] string::FromUtf8Error),
+}
+
+#[derive(Debug, Error)]
+pub enum AVCError {
+    #[error( "NAL unit type not implemented: {0}")]
+    UnknownNAL( u8 ),
+    #[error("SubWidthC undefined")]
+    SubWidthCUndefined,
+    #[error("SubHeightC undefined")]
+    SubHeightCUndefined,
+    #[error("Parameter Length Inadequate")]
+    ParameterLength,
+    #[error("Read Bits Error")]
+    ReadBitsError
 }
