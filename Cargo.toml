@@ -1,4 +1,4 @@
-workspace = { members = ["flv", "utils"] }
+workspace = { members = ["flv", "rx", "utils"] }
 [package]
 name = "blzbj"
 version = "0.1.0"

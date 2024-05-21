@@ -1,0 +1,40 @@
+# 使用Unix风格的换行符，即LF。对于Windows，你可能更喜欢CRLF
+newline_style = "Unix"
+
+# 设定代码的最大宽度为100字符，这有助于保持代码的可读性，尤其是在使用分屏编辑器时
+max_width = 100
+
+# 使用空格而不是制表符进行缩进
+hard_tabs = false
+
+# 每个缩进级别使用4个空格
+tab_spaces = 4
+
+# 在函数签名和调用中，当参数不能在同一行上排布时，使用垂直排布
+fn_call_style = "Block"
+
+# 在链式调用中，如果不能在同一行中完成，则优先使用垂直布局
+chain_style = "Tall"
+
+# 使用尾随逗号，这在多行集合字面量中有助于减少版本控制系统中的差异
+trailing_comma = "Always"
+
+# 对于结构体和枚举变体来说，如果所有字段都不能在同一行上排布，将它们格式化为多行
+struct_lit_multiline_style = "ForceMulti"
+
+# 当函数参数无法在一行内排布时，使用垂直布局
+fn_args_layout = "Tall"
+
+# 对于导入（use）声明，将它们合并到一个嵌套的树形结构中
+imports_granularity = "Crate"
+
+# 对导入的项进行排序和分组
+reorder_imports = true
+reorder_modules = true
+reorder_impl_items = true
+
+# 在闭包参数与其体之间添加空格
+space_before_closure_param = true
+
+# 当元组或数组的元素不能在一行内排布时，将它们格式化为多行
+multiline_closure_forces_block = true
