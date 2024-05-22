@@ -153,7 +153,11 @@ checksum = "cf4b9d6a944f767f8e5e0db018570623c85f3d925ac718db4e06d0187adb21c1"
 name = "blzbj"
 version = "0.1.0"
 dependencies = [
- "rxrust",
+ "md5",
+ "rx",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
  "utils",
 ]
 
@@ -751,6 +755,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "md5"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1201,21 +1211,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rxrust"
-version = "1.0.0-beta.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9a529052da83e8897bb1f40459a0837b3c048eafabfae3bf1e7c050146b8141"
-dependencies = [
- "futures",
- "futures-time",
- "gloo-timers",
- "once_cell",
- "pin-project-lite",
- "smallvec",
- "wasm-bindgen-futures",
-]
-
-[[package]]
 name = "ryu"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1287,9 +1282,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.116"
+version = "1.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e17db7126d17feb94eb3fad46bf1a96b034e8aacbc2e775fe81505f8b0b2813"
+checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
 dependencies = [
  "itoa",
  "ryu",
@@ -1687,7 +1682,12 @@ dependencies = [
  "async-trait",
  "chrono",
  "parking_lot",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
  "thiserror",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]
