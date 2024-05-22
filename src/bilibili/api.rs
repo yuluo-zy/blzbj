@@ -133,13 +133,13 @@ impl WebApi {
     //     Ok(serde_json::from_value(json_res.data.unwrap())?)
     // }
     //
-    pub async fn get_info_by_room(&self, room_id: i32) -> Result<ResponseData, ApiRequestError> {
+    pub async fn get_info_by_room(&self, room_id: i32) -> Result<crate::bilibili::live::RoomInfo, ApiRequestError> {
         let path = "/xlive/web-room/v1/index/getInfoByRoom";
         let mut params = HashMap::new();
         params.insert("room_id".to_string(), room_id.to_string());
 
-        let json_res = self.get_json(&self.base_live_api_urls, path, &params).await?;
-        Ok(serde_json::from_value(json_res.data.unwrap())?)
+        let json_res = self.get_json::<crate::bilibili::live::RoomInfo>(&self.base_live_api_urls, path, &params).await?;
+        Ok(json_res.data.unwrap())
     }
     //
     // pub async fn get_info(&self, room_id: i32) -> Result<ResponseData, ApiRequestError> {

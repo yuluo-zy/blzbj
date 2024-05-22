@@ -1,19 +1,10 @@
-use std::time::Duration;
-use utils::{reqwest, serde_json, TError};
+use serde::Deserialize;
+use utils::{reqwest, TError};
 use utils::error::LiveError;
 use utils::reqwest::Client;
-use utils::serde::Deserialize;
 use crate::bilibili::api::{BaseApi, WebApi};
+use crate::bilibili::models::{RoomInfo, UserInfo};
 
-
-#[derive(Debug, Deserialize)]
-struct RoomInfo {
-    live_status: i32,
-    uid: i32,
-}
-
-#[derive(Debug, Deserialize)]
-struct UserInfo {}
 
 #[derive(Debug, Deserialize)]
 struct ResponseData {}
@@ -52,7 +43,7 @@ impl Live {
 
     async fn init(&mut self) -> Result<(), LiveError> {
         self.room_info = Some(self.get_room_info().await?);
-        self.user_info = Some(self.get_user_info(self.room_info.as_ref().unwrap().uid).await?);
+        self.user_info = Some(self.get_user_info(&self.room_info.unwrap().uid).await?);
 
         if self.is_living() {
             let streams = self.get_live_streams(None).await?;
@@ -63,6 +54,7 @@ impl Live {
 
         Ok(())
     }
+
 
     async fn deinit(&self) {
         // Do any cleanup if necessary
@@ -78,18 +70,11 @@ impl Live {
     }
 
     async fn get_room_info(&self) -> Result<RoomInfo, LiveError> {
-        let res = self.webapi.get(format!("https://api.live.bilibili.com/room/v1/Room/get_info?room_id={}", self.room_id))
-            .headers(self.headers.clone())
-            .send()
-            .await?;
-        let data: ResponseData = res.json().await?;
-        Ok(RoomInfo {
-            live_status: data.live_status,
-            uid: data.uid,
-        })
+        let res = self.webapi.get_info_by_room(self.room_id).await?;
+        Ok(res)
     }
 
-    async fn get_user_info(&self, uid: i32) -> Result<UserInfo, LiveError> {
+    async fn get_user_info(&self, uid: u64) -> Result<UserInfo, LiveError> {
         // Implement the logic to get user info
         Ok(UserInfo {})
     }
