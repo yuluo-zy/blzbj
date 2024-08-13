@@ -42,6 +42,7 @@ pub mod throttle;
 pub mod timestamp;
 pub mod with_latest_from;
 pub mod zip;
+pub mod sliding_window;
 
 use default_if_empty::DefaultIfEmptyOp;
 use last::LastOp;

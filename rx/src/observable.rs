@@ -105,6 +105,7 @@ use ops::{
   Accum, AverageOp, CountOp, FlatMapOp, MinMaxOp, ReduceOp, SumOp,
 };
 use std::ops::{Add, Mul};
+
 #[cfg(test)]
 pub mod fake_timer;
 
@@ -143,7 +144,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::empty()
   ///   .last_or(1234)
@@ -208,7 +209,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(0..100)
   ///   .last()
@@ -245,7 +246,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   /// let mut source = Subject::default();
   /// let numbers = Subject::default();
   /// // create a even stream by filter
@@ -336,7 +337,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// #[derive(Clone)]
   /// struct Person {
@@ -410,7 +411,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   /// let numbers = Subject::default();
   /// // create a even stream by filter
   /// let even = numbers.clone().filter(|v| *v % 2 == 0);
@@ -447,7 +448,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   /// # use futures::executor::LocalPool;
   /// # use std::time::Duration;
   /// let mut local = LocalPool::new();
@@ -499,7 +500,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   ///
   /// ```
-  /// use rxrust:: prelude::*;
+  /// use rx:: prelude::*;
   ///
   /// let mut coll = vec![];
   /// let coll_clone = coll.clone();
@@ -536,7 +537,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  ///  # use rxrust::prelude::*;
+  ///  # use rx::prelude::*;
   ///  let mut res: Vec<i32> = vec![];
   ///   observable::from_iter(["1", "lol", "3", "NaN", "5"].iter())
   ///   .filter_map(|s: &&str| s.parse().ok())
@@ -563,7 +564,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Ignore the first 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10).skip(5).subscribe(|v| println!("{}", v));
 
@@ -586,7 +587,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///  the notify observable.
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// let mut items = vec![];
   /// let notifier = Subject::<(), ()>::default();
@@ -632,7 +633,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Suppress the first 5 items of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10)
   ///   .skip_while(|v| v < &5)
@@ -664,7 +665,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Skip the last 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10)
   ///   .skip_last(5)
@@ -693,7 +694,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Take the first 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10).take(5).subscribe(|v| println!("{}", v));
   /// // print logs:
@@ -743,7 +744,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Take the first 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10)
   ///   .take_while(|v| v < &5)
@@ -772,7 +773,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Take the first 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10)
   ///   .take_while_inclusive(|v| v < &4)
@@ -805,7 +806,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// Take the last 5 seconds of an infinite 1-second interval Observable
   ///
   /// ```
-  /// # use rxrust::prelude::*;
+  /// # use rx::prelude::*;
   ///
   /// observable::from_iter(0..10)
   ///   .take_last(5)
@@ -832,7 +833,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// #Example
   /// Sampling every  5ms of an infinite 1ms interval Observable
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use std::time::Duration;
   /// use futures::executor::LocalPool;
   ///
@@ -900,7 +901,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![1, 1, 1, 1, 1])
   ///   .scan_initial(100, |acc, v| acc + v)
@@ -958,7 +959,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![1, 1, 1, 1, 1])
   ///   .reduce_initial(100, |acc, v| acc + v)
@@ -1009,7 +1010,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![3., 4., 7., 5., 6.])
   ///   .max()
@@ -1043,7 +1044,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![3., 4., 7., 5., 6.])
   ///   .min()
@@ -1079,7 +1080,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![1, 1, 1, 1, 1])
   ///   .sum()
@@ -1107,7 +1108,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec!['1', '7', '3', '0', '4'])
   ///   .count()
@@ -1130,7 +1131,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Examples
   ///
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(vec![3., 4., 5., 6., 7.])
   ///   .average()
@@ -1285,7 +1286,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// # Example
   /// Given the following code:
   /// ```rust
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// let a = observable::from_iter(1..5);
   /// let b = observable::from_iter(5..10);
@@ -1299,7 +1300,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   /// But if we instead use the `subscribe_on` operator declaring that we want
   /// to use the new thread scheduler for values emitted by Observable `a`:
   /// ```rust
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use std::thread;
   ///
   /// let pool = FuturesThreadPoolScheduler::new().unwrap();
@@ -1357,7 +1358,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::{ prelude::*, ops::throttle::ThrottleEdge };
+  /// use rx::{ prelude::*, ops::throttle::ThrottleEdge };
   /// use std::time::Duration;
   ///
   /// let mut local_pool = FuturesLocalSchedulerPool::new();
@@ -1400,7 +1401,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::{ prelude::*, ops::throttle::ThrottleEdge };
+  /// use rx::{ prelude::*, ops::throttle::ThrottleEdge };
   /// use std::time::Duration;
   ///
   /// let mut local_pool = FuturesLocalSchedulerPool::new();
@@ -1516,7 +1517,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::empty()
   ///   .default_if_empty(5)
@@ -1552,7 +1553,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// observable::from_iter(0..6)
   ///   .buffer_with_count(3)
@@ -1578,7 +1579,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use std::time::Duration;
   ///
   /// let pool = FuturesThreadPoolScheduler::new().unwrap();
@@ -1614,7 +1615,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use std::time::Duration;
   ///
   /// let pool = FuturesThreadPoolScheduler::new().unwrap();
@@ -1654,7 +1655,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// #Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use std::time::Duration;
   /// use futures::executor::LocalPool;
   ///
@@ -1754,7 +1755,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// # Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// let mut subject = Subject::default();
   /// subject.clone()
@@ -1781,7 +1782,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// # Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// #[tokio::main]
   /// async fn main() {
@@ -1812,7 +1813,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// # Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   ///
   /// #[tokio::main]
   /// async fn main() {
@@ -1833,7 +1834,7 @@ pub trait ObservableExt<Item, Err>: Sized {
   ///
   /// # Example
   /// ```
-  /// use rxrust::prelude::*;
+  /// use rx::prelude::*;
   /// use futures::StreamExt;
   ///
   /// #[tokio::main]

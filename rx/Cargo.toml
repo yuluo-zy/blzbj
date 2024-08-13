@@ -30,7 +30,7 @@ features = ["futures"]
 version = "0.2.5"
 
 [features]
-default = ["futures-scheduler", "timer"]
+default = ["tokio-scheduler", "timer"]
 futures-scheduler = ["futures/thread-pool"]
 tokio-scheduler = ["tokio"]
 timer = ["futures-time"]
