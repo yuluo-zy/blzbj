@@ -1,10 +1,14 @@
+pub mod error;
+
 pub use chrono;
-
+pub use regex;
 pub use async_trait;
-
+pub use reqwest;
 pub use parking_lot;
-
+pub use tokio;
 pub use anyhow::Result as BResult;
+pub use thiserror::Error as TError;
+pub use tracing::{error, info};
 
 pub use tracing;
 
@@ -16,9 +20,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use std::time::Duration;
-use tracing::{error, info};
 
-use super::extractor::CallbackFn;
 
 #[derive(Debug)]
 pub enum Segment {
@@ -26,17 +28,20 @@ pub enum Segment {
     Size(u64, u64),
     Never,
 }
+
 #[derive(Debug)]
 pub struct Segmentable {
     time: Time,
     size: Size,
 }
+
 #[derive(Debug)]
 struct Time {
     expected: Option<Duration>,
     start: Duration,
     current: Duration,
 }
+
 #[derive(Debug)]
 struct Size {
     expected: Option<u64>,
