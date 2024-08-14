@@ -1,4 +1,4 @@
-workspace = { members = ["flv", "rx", "utils", "core", "blbl"] }
+workspace = { members = ["flv", "rx", "utils", "stream_core", "blbl"] }
 [package]
 name = "blzbj"
 version = "0.1.0"
@@ -7,6 +7,3 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rx = { path = "rx" }
-core = { path = "core" }
-utils = { path = "utils" }

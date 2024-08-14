@@ -1,4 +1,6 @@
+use std::cmp::PartialEq;
 use utils::BResult;
+use crate::live::LiveStatus::Live;
 
 #[derive(Debug, Copy, Clone)]
 pub enum StreamFormat {
@@ -10,12 +12,21 @@ pub enum RecordingMode {
     Standard,
     Raw,
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LiveStatus {
-    Live,
-    Offline,
-    Unknown,
-    // Add other variants as needed
+    Live = 1,
+    Offline = 2,
+    Unknown = 3,
+}
+impl From<i32> for LiveStatus {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => LiveStatus::Live,
+            2 => LiveStatus::Offline,
+            3 => LiveStatus::Unknown,
+            _ => LiveStatus::Unknown
+        }
+    }
 }
 #[derive(Debug, Copy, Clone)]
 pub enum QualityNumber {
@@ -27,6 +38,36 @@ pub enum QualityNumber {
     P150, // 高清
     P80, // 流畅
 }
+impl From<i32> for QualityNumber {
+    fn from(value: i32) -> Self {
+        match value {
+            20000 => QualityNumber::P20000,
+            10000 => QualityNumber::P10000,
+            401 => QualityNumber::P401,
+            400 => QualityNumber::P400,
+            250 => QualityNumber::P250,
+            150 => QualityNumber::P150,
+            80 => QualityNumber::P80,
+            _ => QualityNumber::P250
+        }
+    }
+}
+impl From<QualityNumber> for i32 {
+    fn from(value: QualityNumber) -> Self {
+        match value {
+              QualityNumber::P20000 => 20000,
+            QualityNumber::P10000 => 10000,
+            QualityNumber::P401 => 401,
+            QualityNumber::P400 => 400,
+            QualityNumber::P250 => 250,
+            QualityNumber::P150 => 150,
+            QualityNumber::P80 => 80,
+        }
+    }
+}
+
+
+
 #[derive(Debug, Clone)]
 pub struct RoomInfo {
     uid: i32,
@@ -44,7 +85,6 @@ pub struct RoomInfo {
     tags: String,
     description: String,
 }
-
 impl RoomInfo {
     pub fn new(uid: i32,
                room_id: i32,
@@ -77,7 +117,12 @@ impl RoomInfo {
             description,
         }
     }
+
+    pub fn is_living(&self) -> bool {
+        self.live_status == Live
+    }
 }
+
 pub trait  LiveTrait  {
     fn room_info() -> BResult<RoomInfo>;
 
@@ -86,4 +131,4 @@ pub trait  LiveTrait  {
     fn is_living() -> BResult<bool>;
 }
 
-pub trait LiveMonitor {}
+pub trait LiveMonitorTrait {}

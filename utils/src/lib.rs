@@ -115,55 +115,55 @@ impl Default for Segmentable {
     }
 }
 
-pub struct LifecycleFile {
-    pub fmt_file_name: String,
-    pub file_name: String,
-    pub path: PathBuf,
-    pub hook: CallbackFn,
-    pub extension: &'static str,
-}
-
-impl LifecycleFile {
-    pub fn new(fmt_file_name: &str, extension: &'static str, hook: Option<CallbackFn>) -> Self {
-        let hook: Box<dyn Fn(&str) + Send> = if let Some(hook) = hook {
-            hook
-        } else {
-            Box::new(|_| {})
-        };
-        Self {
-            fmt_file_name: fmt_file_name.to_string(),
-            file_name: "".to_string(),
-            path: Default::default(),
-            hook,
-            extension,
-        }
-    }
-
-    pub fn create(&mut self) -> Result<&Path, std::io::Error> {
-        self.file_name = format!(
-            "{}.{}",
-            format_filename(&self.fmt_file_name),
-            self.extension
-        );
-        self.path = PathBuf::from(&self.file_name);
-        if let Some(parent) = self.path.parent() {
-            fs::create_dir_all(parent)?
-        }
-        // path.set_extension(&self.extension);
-        self.path.set_extension(format!("{}.part", self.extension));
-        info!("Save to {}", self.path.display());
-        Ok(self.path.as_path())
-    }
-
-    pub fn rename(&self) {
-        match fs::rename(&self.path, &self.file_name) {
-            Ok(_) => (self.hook)(&self.file_name),
-            Err(e) => {
-                error!("drop {} {e}", self.path.display())
-            }
-        }
-    }
-}
+// pub struct LifecycleFile {
+//     pub fmt_file_name: String,
+//     pub file_name: String,
+//     pub path: PathBuf,
+//     pub hook: CallbackFn,
+//     pub extension: &'static str,
+// }
+//
+// impl LifecycleFile {
+//     pub fn new(fmt_file_name: &str, extension: &'static str, hook: Option<CallbackFn>) -> Self {
+//         let hook: Box<dyn Fn(&str) + Send> = if let Some(hook) = hook {
+//             hook
+//         } else {
+//             Box::new(|_| {})
+//         };
+//         Self {
+//             fmt_file_name: fmt_file_name.to_string(),
+//             file_name: "".to_string(),
+//             path: Default::default(),
+//             hook,
+//             extension,
+//         }
+//     }
+//
+//     pub fn create(&mut self) -> Result<&Path, std::io::Error> {
+//         self.file_name = format!(
+//             "{}.{}",
+//             format_filename(&self.fmt_file_name),
+//             self.extension
+//         );
+//         self.path = PathBuf::from(&self.file_name);
+//         if let Some(parent) = self.path.parent() {
+//             fs::create_dir_all(parent)?
+//         }
+//         // path.set_extension(&self.extension);
+//         self.path.set_extension(format!("{}.part", self.extension));
+//         info!("Save to {}", self.path.display());
+//         Ok(self.path.as_path())
+//     }
+//
+//     pub fn rename(&self) {
+//         match fs::rename(&self.path, &self.file_name) {
+//             Ok(_) => (self.hook)(&self.file_name),
+//             Err(e) => {
+//                 error!("drop {} {e}", self.path.display())
+//             }
+//         }
+//     }
+// }
 
 pub fn format_filename(file_name: &str) -> String {
     let local: DateTime<Local> = Local::now();
