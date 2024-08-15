@@ -1,4 +1,5 @@
 use std::cmp::PartialEq;
+use utils::async_trait::async_trait;
 use utils::BResult;
 use crate::live::LiveStatus::Live;
 
@@ -123,12 +124,15 @@ impl RoomInfo {
     }
 }
 
+#[async_trait]
 pub trait  LiveTrait  {
-    fn room_info() -> BResult<RoomInfo>;
+    async fn room_info() -> BResult<RoomInfo>;
 
     fn stream_format() -> BResult<StreamFormat>;
 
-    fn is_living() -> BResult<bool>;
+    async fn is_living() -> BResult<bool>;
+
+    async fn live_streams() -> BResult<Vec<String>>;
 }
 
 pub trait LiveMonitorTrait {}

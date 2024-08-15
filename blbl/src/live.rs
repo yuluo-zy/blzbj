@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use stream_core::live::{LiveTrait, RoomInfo, LiveStatus, QualityNumber};
+use stream_core::live::{LiveTrait, RoomInfo, LiveStatus, QualityNumber, StreamFormat};
 use crate::api::{WebClient};
 use anyhow::{anyhow, Result};
 
@@ -29,9 +29,6 @@ impl Live {
         self.room_id = room_id;
         self.room_info().await?;
         self.no_flv_stream = true;
-        if self.is_living(){
-            self.
-        }
         Ok(self)
     }
 
@@ -60,6 +57,7 @@ impl Live {
     }
 
     async fn get_live_streams(&self, qn: QualityNumber) -> Result<()>{
+        // 解释 得到url
         let play_infos = self.client.get_room_play_infos(self.room_id, qn.into()).await?;
 
         Ok(())
@@ -91,15 +89,19 @@ fn parse_room_info(response: serde_json::Value) -> Result<RoomInfo> {
 }
 
 // impl LiveTrait for Live {
-//     fn room_info() -> Result<core::live::RoomInfo> {
+//     async fn room_info() -> Result<RoomInfo> {
 //         todo!()
 //     }
 //
-//     fn stream_format() -> Result<core::live::StreamFormat> {
+//     fn stream_format() -> Result<StreamFormat> {
 //         todo!()
 //     }
 //
-//     fn is_living() -> Result<bool> {
+//     async fn is_living() -> Result<bool> {
+//         todo!()
+//     }
+//
+//     async fn live_streams() -> Result<Vec<String>> {
 //         todo!()
 //     }
 // }
